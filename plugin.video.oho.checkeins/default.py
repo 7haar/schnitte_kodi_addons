@@ -22,6 +22,7 @@ addon = xbmcaddon.Addon()
 main_url = "http://www.checkeins.de"
 
 icon = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')+'/icon.png').decode('utf-8') 
+fanartlokal = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')+'/fanart.jpg').decode('utf-8')
 
 xbmcplugin.setContent(addon_handle, 'movies')
 xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
@@ -66,14 +67,14 @@ def parameters_string_to_dict(parameters):
 	return paramDict
 
 	
-def addDir(name, url, mode, thump, desc="",page=1,nosub=0):   
+def addDir(name, url, mode, thump, fanartonline="", desc="",page=1,nosub=0):   
   u = sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&page="+str(page)+"&nosub="+str(nosub)
   ok = True
   liz = xbmcgui.ListItem(name)  
   liz.setArt({ 'fanart' : thump })
   liz.setArt({ 'thumb' : thump })
   liz.setArt({ 'banner' : icon })
-  liz.setArt({ 'fanart' : icon })
+  liz.setArt({ 'fanart' : fanartlokal })
   liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": desc})
   ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
   return ok
@@ -84,7 +85,7 @@ def addLink(name, url, mode, thump, duration="", desc="", genre='',director="",b
   u = sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)
   ok = True
   liz = xbmcgui.ListItem(name,thumbnailImage=thump)
-  liz.setArt({ 'fanart' : icon })
+  liz.setArt({ 'fanart' : fanartlokal })
   liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": desc, "Genre": genre, "Director":director,"Rating":bewertung})
   liz.setProperty('IsPlayable', 'true')
   liz.addStreamInfo('video', { 'duration' : duration })
@@ -144,6 +145,7 @@ def playvideo(url):
 	content = smart_str(cont)
 	#content = smart_str(testxml.xmlt())
 	#print(content)
+	notice('play ... : '+url)
 	title = re.search(reg_title,content).group(1)
 	duration = re.search(reg_dur,content).group(1)
 	desc = re.search(reg_desc,content).group(1)
@@ -182,17 +184,28 @@ def checkeins(url,m):
 	if m == 'dir':
 		start = 5
 	for item in links[start:]:
+		#item[0] -> link
+		#item[1] -> thumb
+		#item[2] -> title
 		item = list(item)
 		if str(item[1]).find('http') == -1:
 			item[1] = main_url+str(item[1])
+		notice(item[1])
+		if '-standard368_' in item[1]:
+			item[1] = item[1].replace('-standard368_','-varl_')
+		if '-varm_' in item[1]:
+			item[1] = item[1].replace('-varm_','-varl_')
+		if '-vars_' in item[1]:
+			item[1] = item[1].replace('-vars_','-varl_')
+		
 		if m == 'dir':
 			#notice(item[2])
 			if 'Thementag' not in item[2]:
 				item[0] = main_url+str(item[0][:item[0].find('"')])
 				addDir(mUnescape(item[2]),item[0], "check1episode",item[1])
 		if m == 'episodes':
-			#reg = '.*\/(.+)\.html'
-			reg = '.*\/(.+).{3,4}'
+			reg = '.*\/(.+)\.html'
+			#reg = '.*\/(.+).{3,4}'
 			temp = re.search(reg,item[0])
 			item[0] = main_url+'/'+temp.group(1)+'~playerXml.xml'
 			addLink(mUnescape(item[2]),item[0], "playvideo",item[1])
