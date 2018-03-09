@@ -8,19 +8,16 @@ import xbmcplugin
 import xbmcaddon
 import xbmc
 import xbmcvfs
-#from io import StringIO, BytesIO
-#from HTMLParser import HTMLParser
-#from bs4 import BeautifulSoup
-#import xml.etree.ElementTree as etree
-#from lxml import etree
 from django.utils.encoding import smart_str
 from operator import itemgetter
+
 
 
 # Setting Variablen des Plugins
 global debuging
 addon_handle = int(sys.argv[1])
 addon = xbmcaddon.Addon()
+
 
 main_url = "http://www.checkeins.de"
 
@@ -91,7 +88,6 @@ def addLink(name, url, mode, thump, duration="", desc="", genre='',director="",b
   liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": desc, "Genre": genre, "Director":director,"Rating":bewertung})
   liz.setProperty('IsPlayable', 'true')
   liz.addStreamInfo('video', { 'duration' : duration })
-	#xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
   ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz)
   return ok
   
@@ -136,7 +132,6 @@ def mUnescape(s):
 	s = s.replace('&apos;',"'")
 	s = s.replace('&commat;','@')
 	s = s.replace('&percnt;','%')
-	
 	return s
 
 def playvideo(url):
@@ -171,10 +166,12 @@ def playvideo(url):
 	xbmcplugin.setResolvedUrl(addon_handle, True, listitem)
 	
 def checkeins(url,m):
+	#notice(url)
 	#reg = 'mediaCon.*?<a href="(.+?)" class.*?mediaLink.*?\'m\':\{\'src\':\'(.+?)\'\}.*?headline.*?html.*?>(.+?)<'
 	if url == '':
 		url = "http://www.checkeins.de/videos/index.html"
 	reg = 'mediaCon.*?<a href="(.+?)">.*?\'m\':\{\'src\':\'(.*?)\'\}.*?headline.*?html.*?>(.+?)<'
+	#reg = 'mediaCon.*?<a href="(.+?)">.*?\'m\':\{\'src\':\'(.*?)\'\}.*?headline.*?html.*?>(.+?)<'
 	regnext = '.*?<a.*?href="(.+?)">&gt;<\/a>|.*?<a.*?href="(.+?)">&lt;<\/a>'
 	content = geturl(url)
 	content = smart_str(content)
@@ -189,10 +186,13 @@ def checkeins(url,m):
 		if str(item[1]).find('http') == -1:
 			item[1] = main_url+str(item[1])
 		if m == 'dir':
-			item[0] = main_url+str(item[0][:item[0].find('"')])
-			addDir(mUnescape(item[2]),item[0], "check1episode",item[1])
+			#notice(item[2])
+			if 'Thementag' not in item[2]:
+				item[0] = main_url+str(item[0][:item[0].find('"')])
+				addDir(mUnescape(item[2]),item[0], "check1episode",item[1])
 		if m == 'episodes':
-			reg = '.*\/(.+)\.html'
+			#reg = '.*\/(.+)\.html'
+			reg = '.*\/(.+).{3,4}'
 			temp = re.search(reg,item[0])
 			item[0] = main_url+'/'+temp.group(1)+'~playerXml.xml'
 			addLink(mUnescape(item[2]),item[0], "playvideo",item[1])
@@ -210,14 +210,12 @@ def checkeins(url,m):
 			addDir('next >>>', tnext, "check1episode",'')
 	xbmcplugin.endOfDirectory(addon_handle) 
 
-
 params = parameters_string_to_dict(sys.argv[2])
 mode = urllib.unquote_plus(params.get('mode', ''))
 url = urllib.unquote_plus(params.get('url', ''))
 referer = urllib.unquote_plus(params.get('referer', ''))
 page = urllib.unquote_plus(params.get('page', ''))
 nosub= urllib.unquote_plus(params.get('nosub', ''))
-
      
 if mode is '':
 	checkeins('','dir')
@@ -230,24 +228,3 @@ else:
 		checkeins(url,'episodes')
 	if mode == 'subrubrik':
 		subrubrik(url)
-		  
-		  
-		  
-		  
-		  
-# Testarea #
-'''
-main_url = "http://www.checkeins.de"
-#url = "http://www.checkeins.de/videos/index.html"
-url = "http://www.checkeins.de/sendungen/die-checker/videos/index.html"
-m='episodes'
-checkeins(url,m)
-url = 'http://www.checkeins.de/checker-can-der-biathlon-check-100~playerXml.xml'
-playvideo(url)
-#cProfile.run('liste()')
-#cProfile.run("liste2()")
-#checkeins()
-print("################################")
-'''
-
-
