@@ -1,17 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.oho.checkeins" name="Checkeins" version="0.0.5" provider-name="oho">
+<addon id="plugin.video.oho.newstv" name="NewsTV" version="0.0.9" provider-name="oho">
     <requires>
         <import addon="xbmc.python" version="2.24.0"/>
         <import addon="script.module.requests" version="2.12.4"/>
     </requires>
-    <extension point="xbmc.python.pluginsource" library="default.py">
+<!--    <extension point="xbmc.python.script"
+            library="default.py">
+            <provides>executable</provides>
+    </extension>
+-->
+ <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video</provides>
     </extension>
+
   <extension point="xbmc.addon.metadata">
-    <summary lang="de">Videos von Checkeins.de</summary>
-    <summary lang="en">Video from Checkeins.de</summary>
-    <description lang="en">Video from Checkeins.de</description>
-    <description lang="de">Videos von Checkeins.de</description>
+    <summary lang="de">test</summary>
+    <summary lang="en">test</summary>
+    <description lang="en">test</description>
+    <description lang="de">test</description>
     <website></website>
     <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
     <source></source>

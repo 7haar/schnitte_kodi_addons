@@ -1,49 +1,146 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import xbmc, xbmcgui, xbmcaddon, sys
+
+import random
+#import urllib.request
+import urllib2
+import json 
+import datetime
 import re
-import cProfile
-import urllib, urllib2, cookielib, shutil,json, os
-import sys
-import urlparse
-import xbmcgui
-import xbmcplugin
-import xbmcaddon
-import xbmc
-import xbmcvfs
-from django.utils.encoding import smart_str
-from operator import itemgetter
 
-
-
-# Setting Variablen des Plugins
-global debuging
-addon_handle = int(sys.argv[1])
+sendung = []
 addon = xbmcaddon.Addon()
+__setting__ = addon.getSetting
+#
+if __setting__('rbb') == 'true':
+	sendung.append('Brandenburgaktuell')
+	sendung.append('rbb')
+if __setting__('ts') == 'true':
+	sendung.append('tagesschau')
+	sendung.append('ts')
+if __setting__('ts24') == 'true':
+	sendung.append('tagesschauXX')
+	sendung.append('ts')
+if __setting__('ht') == 'true':
+	sendung.append('heute')
+	sendung.append('ht')
+if __setting__('hte') == 'true':
+	sendung.append('heute-inEuropa')
+	sendung.append('ht')
+if __setting__('htd') == 'true':
+	sendung.append('heute-inDeutschland')
+	sendung.append('ht')
+if __setting__('htp') == 'true':
+	sendung.append('heuteplus')
+	sendung.append('ht')
+if __setting__('mdrh') == 'true':
+	sendung.append('MDRSACHSEN-ANHALTHEUTE')
+	sendung.append('mdrh')
+if __setting__('htj') == 'true':
+	sendung.append('heutejournal')
+	sendung.append('ht')
+if __setting__('sr') == 'true':
+	sendung.append('Aktuell(XXUhr)')
+	sendung.append('sr')
+if __setting__('mdra') == 'true':
+	sendung.append('MDRaktuellXX:XXUhr')
+	sendung.append('mdrh')
+if __setting__('ndra') == 'true':
+	sendung.append('NDRAktuell')
+	sendung.append('ndr')
+if __setting__('srb') == 'true':
+	sendung.append('aktuellerbericht')
+	sendung.append('sr')
+if __setting__('wdras') == 'true':
+	sendung.append('AktuelleStunde')
+	sendung.append('wdr')
+if __setting__('swra') == 'true':
+	sendung.append('SWRAktuellRheinland-Pfalz')
+	sendung.append('swr')
+if __setting__('hra') == 'true':
+	sendung.append('hessenschau')
+	sendung.append('hs')
+if __setting__('brfa') == 'true':
+	sendung.append('Frankenschauaktuell')
+	sendung.append('brfa')
+
+def datum(tim):
+	return datetime.datetime.fromtimestamp(int(tim)).strftime('%d.%m.%Y')
 
 
-main_url = "http://www.checkeins.de"
+def prep(str):
+	prepstr = re.sub('\d', 'X', str)
+	prepstr = prepstr.replace(' ','')
+	prepstr = prepstr.replace('//','')
+	if (prepstr == 'Aktuell(XX:XXUhr)'):
+		prepstr = 'Aktuell(XXUhr)'
+	if (prepstr=='heuteXX:XXUhr'):
+		prepstr = 'heute'
+	return prepstr
 
-icon = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')+'/icon.png').decode('utf-8') 
-fanartlokal = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')+'/fanart.jpg').decode('utf-8')
+def start():
+	size=200
+	payload={'queries':[{'fields':['topic'],'query':'tagesschau'},{'fields':['topic'],'query':'heute'},{'fields':['topic'],'query':'Rundschau'},{'fields':['topic'],'query':'hessenschau'},{'fields':['topic'],'query':'aktuell'},{'fields':['channel'],'query':'zdf'},{'fields':['channel'],'query':'ard'}],'sortBy':'timestamp','sortOrder':'desc','future':False,'offset':0,'size':size}
+	mvw = 'https://mediathekviewweb.de/api/query'
+	#mvw = 'http://123derf.org/'
+	params = json.dumps(payload).encode('utf8')
+	req = urllib2.Request(mvw, data=params,headers={'content-type': 'text/plain'})
+	try:
+		response = urllib2.urlopen(req)
+	except urllib2.HTTPError, e:
+		notice('HTTPError = ' + str(e.code))
+		xbmcgui.Dialog().notification('ERROR','mediathekviewweb.de nicht erreichbar',xbmcgui.NOTIFICATION_ERROR, 5000)
+		return
+	except urllib2.URLError, e:
+		notice('URLError = ' + str(e.reason))
+		xbmcgui.Dialog().notification('ERROR','mediathekviewweb.de nicht erreichbar',xbmcgui.NOTIFICATION_ERROR, 5000)
+		return
 
-xbmcplugin.setContent(addon_handle, 'movies')
-xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
-xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_SORT_TITLE)
+	#sender = ['tagesschau','tagesschauXX','heute','heuteplus','RundschauNacht','heutejournal','NDR//Aktuell','SWRAktuellRheinland-Pfalz','Aktuell(XX:XXUhr)','SWRAktuellBaden-W\xc3rttemberg','MDRaktuellXX:XXUhr','Brandenburgaktuell','hessenschau','aktuellerbericht','MDRSACHSEN-ANHALTHEUTE','heuteXX:XXUhr','AktuelleStunde','Aktuell(XXUhr)','Leuteheute','Frankenschauaktuell','heute-inEuropa','heute-inDeutschland']
+	#sender = ['tagesschau','tagesschauXX','heute','heuteplus','RundschauNacht','heutejournal','NDR//Aktuell','SWRAktuellRheinland-Pfalz','Aktuell(XX:XXUhr)','MDRaktuellXX:XXUhr','Brandenburgaktuell','hessenschau','aktuellerbericht','MDRSACHSEN-ANHALTHEUTE','heuteXX:XXUhr','AktuelleStunde','Aktuell(XXUhr)','Frankenschauaktuell','heute-inEuropa','heute-inDeutschland']
+	
 
-# Cookie Section
 
-profile = xbmc.translatePath( addon.getAddonInfo('profile') ).decode("utf-8")
-temp = xbmc.translatePath( os.path.join( profile, 'temp', '') ).decode("utf-8")
+	j = json.loads(response.read())
+	arr =  []
+	hash = {}
+	geb = u'Gebärden'.encode('utf-8')
+	
+	pl=xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+	pl.clear()
 
-if xbmcvfs.exists(temp):
-	shutil.rmtree(temp)
-xbmcvfs.mkdirs(temp)
+	for i in j['result']['results']:
+		if(round((i['duration']/60))>9):
+			topic = prep(i['topic'])
+			if not topic in hash:
+				if (not geb in topic.encode('utf-8')) and (not geb in i['title'].encode('utf-8')) and (topic in sendung): 
+					up =  {topic:'x'}
+					hash.update(up)
+					date = datum(i['timestamp'])
+					url = i['url_video_hd']
+					if url == '':
+						url = i['url_video']
+					name = i['title']
+					img = image(sendung[sendung.index(topic)+1])
+					desc = i['description']
+					if topic == 'Frankenschauaktuell':
+						name = 'BR Frankenschau Aktuell'
+					if topic == 'tagesschauXX':
+						name = 'Tageschau 24'
+						desc = i['title']
+					if re.search('(31|30|[012]\d|\d)\.(0\d|1[012]|\d)\.(\d{1,6})',name) is None:
+						name = name+' vom '+date 
+					li = xbmcgui.ListItem(name,thumbnailImage=img)
+					li.setInfo('video', { 'plot': desc })
+					xbmc.PlayList(1).add(url,li)
+					notice(topic)
+					notice(url)
+					
+	
+	xbmc.Player().play(pl)
 
-cookie=os.path.join( temp, 'cookie.jar')
-cj = cookielib.LWPCookieJar();
-
-if xbmcvfs.exists(cookie):
-    cj.load(cookie,ignore_discard=True, ignore_expires=True)       
-
-# ## #
 
 def debug(content):
     log(content, xbmc.LOGDEBUG)
@@ -55,78 +152,12 @@ def log(msg, level=xbmc.LOGNOTICE):
     addon = xbmcaddon.Addon()
     addonID = addon.getAddonInfo('id')
     xbmc.log('%s: %s' % (addonID, msg), level) 
-	
-def parameters_string_to_dict(parameters):
-	paramDict = {}
-	if parameters:
-		paramPairs = parameters[1:].split("&")
-		for paramsPair in paramPairs:
-			paramSplits = paramsPair.split('=')
-			if (len(paramSplits)) == 2:
-				paramDict[paramSplits[0]] = paramSplits[1]
-	return paramDict
 
-	
-def addDir(name, url, mode, thump, fanartonline="", desc="",page=1,nosub=0):   
-  u = sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&page="+str(page)+"&nosub="+str(nosub)
-  ok = True
-  liz = xbmcgui.ListItem(name)  
-  liz.setArt({ 'fanart' : thump })
-  liz.setArt({ 'thumb' : thump })
-  liz.setArt({ 'banner' : icon })
-  liz.setArt({ 'fanart' : fanartlokal })
-  liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": desc})
-  ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
-  return ok
-  
-def addLink(name, url, mode, thump, duration="", desc="", genre='',director="",bewertung=""):
-  debug("URL ADDLINK :"+url)
-  debug( icon  )
-  u = sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)
-  ok = True
-  liz = xbmcgui.ListItem(name,thumbnailImage=thump)
-  liz.setArt({ 'fanart' : fanartlokal })
-  liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": desc, "Genre": genre, "Director":director,"Rating":bewertung})
-  liz.setProperty('IsPlayable', 'true')
-  liz.addStreamInfo('video', { 'duration' : duration })
-  ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz)
-  return ok
-  
-	
-def geturl(url,data="x",header="",referer=""):
-        global cj
-        debug("Get Url: " +url)
-        for cook in cj:
-          debug(" Cookie :"+ str(cook))
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))        
-        userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36"
-        if header=="":
-          opener.addheaders = [('User-Agent', userAgent)]        
-        else:
-          opener.addheaders = header        
-        if not referer=="":
-           opener.addheaders = [('Referer', referer)]
 
-        try:
-          if data!="x" :
-             content=opener.open(url,data=data).read()
-          else:
-             content=opener.open(url).read()
-        except urllib2.HTTPError as e:
-             #debug( e.code )  
-             cc=e.read()  
-             debug("Error : " +cc)
-             content=""
-       
-        opener.close()
-        cj.save(cookie,ignore_discard=True, ignore_expires=True)               
-        return content
-		
 def mUnescape(s):
 	if '&' not in s:
 		return s
 	s = s.replace('&amp;','&')
-	s = s.replace('&#034;','"')
 	s = s.replace('&quot;','"')
 	s = s.replace('&gt;','>')
 	s = s.replace('&lt;','<')
@@ -135,109 +166,9 @@ def mUnescape(s):
 	s = s.replace('&percnt;','%')
 	return s
 
-def playvideo(url):
-	reg_video='.*?<fileName>(.+?)<\/fileName>'
-	reg_title='.*?<title>(.+?)<\/title>'
-	reg_dur='.*?<duration>(.+?)<\/duration>'
-	reg_desc='.*?<desc>(.+?)<\/desc>'
-	reg_broad='.*?<broadcastDate>(.+?)<\/broadcastDate>'
-	cont = geturl(url)
-	content = smart_str(cont)
-	#content = smart_str(testxml.xmlt())
-	#print(content)
-	notice('play ... : '+url)
-	title = re.search(reg_title,content).group(1)
-	duration = re.search(reg_dur,content).group(1)
-	desc = re.search(reg_desc,content).group(1)
-	bdate = re.search(reg_broad,content).group(1)
-	bdate = bdate[:bdate.find('T')].split('-')
-	ndate = bdate[2]+"."+bdate[1]+"."+bdate[0]
-	links = re.findall(reg_video,content,re.DOTALL)
-	video = []
-	for item in links:
-		video.append(item)
-	desc_full ='{} * vom {} * Dauer {}\n{}'.format(title, ndate, duration, desc)
-	#print('{} \nSendung vom {}\nDauer {}\n{}'.format(title, ndate, duration, desc))	
-	#print(video[1])
-	#print(video[-1])
-	try:
-		listitem = xbmcgui.ListItem(path=video[-1])
-	except:
-		listitem = xbmcgui.ListItem(path=video[1])
-	listitem.setInfo(type="Video", infoLabels={"Title": title, "Plot": desc_full, "Duration": duration})
-	xbmcplugin.setResolvedUrl(addon_handle, True, listitem)
-	
-def checkeins(url,m):
-	#notice(url)
-	#reg = 'mediaCon.*?<a href="(.+?)" class.*?mediaLink.*?\'m\':\{\'src\':\'(.+?)\'\}.*?headline.*?html.*?>(.+?)<'
-	if url == '':
-		url = "http://www.checkeins.de/videos/index.html"
-	reg = 'mediaCon.*?<a href="(.+?)">.*?\'m\':\{\'src\':\'(.*?)\'\}.*?headline.*?html.*?>(.+?)<'
-	#reg = 'mediaCon.*?<a href="(.+?)">.*?\'m\':\{\'src\':\'(.*?)\'\}.*?headline.*?html.*?>(.+?)<'
-	regnext = '.*?<a.*?href="(.+?)">&gt;<\/a>|.*?<a.*?href="(.+?)">&lt;<\/a>'
-	content = geturl(url)
-	content = smart_str(content)
-	#print(content)
-	links = re.findall(reg,content,re.DOTALL)
-	#print(links)
-	start = 0
-	if m == 'dir':
-		start = 5
-	for item in links[start:]:
-		#item[0] -> link
-		#item[1] -> thumb
-		#item[2] -> title
-		item = list(item)
-		if str(item[1]).find('http') == -1:
-			item[1] = main_url+str(item[1])
-		notice(item[1])
-		if '-standard368_' in item[1]:
-			item[1] = item[1].replace('-standard368_','-varl_')
-		if '-varm_' in item[1]:
-			item[1] = item[1].replace('-varm_','-varl_')
-		if '-vars_' in item[1]:
-			item[1] = item[1].replace('-vars_','-varl_')
-		
-		if m == 'dir':
-			#notice(item[2])
-			if 'Thementag' not in item[2]:
-				item[0] = main_url+str(item[0][:item[0].find('"')])
-				addDir(mUnescape(item[2]),item[0], "check1episode",item[1])
-		if m == 'episodes':
-			reg = '.*\/(.+)\.html'
-			#reg = '.*\/(.+).{3,4}'
-			temp = re.search(reg,item[0])
-			item[0] = main_url+'/'+temp.group(1)+'~playerXml.xml'
-			addLink(mUnescape(item[2]),item[0], "playvideo",item[1])
-	links = []
-	if m == 'episodes':
-		next = re.findall(regnext,content)
-		# returns 2 tuple with 2 entries 1 ''
-		if len(next) == 2:
-			tprev = main_url+str(next[0][1])
-			tnext = main_url+str(next[1][0])
-			addDir('<<< prev', tprev, "check1episode",'')
-			addDir('next >>>', tnext, "check1episode",'')
-		if len(next) == 1:
-			tnext = main_url+str(next[0][0])
-			addDir('next >>>', tnext, "check1episode",'')
-	xbmcplugin.endOfDirectory(addon_handle) 
+def image(sender):
+	image = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')+'/resources/media/'+sender+'.png').decode('utf-8')
+	return image
 
-params = parameters_string_to_dict(sys.argv[2])
-mode = urllib.unquote_plus(params.get('mode', ''))
-url = urllib.unquote_plus(params.get('url', ''))
-referer = urllib.unquote_plus(params.get('referer', ''))
-page = urllib.unquote_plus(params.get('page', ''))
-nosub= urllib.unquote_plus(params.get('nosub', ''))
-     
-if mode is '':
-	checkeins('','dir')
-else:
-	if mode == 'Settings':
-		addon.openSettings()
-	if mode == 'playvideo':
-		playvideo(url)
-	if mode == 'check1episode':
-		checkeins(url,'episodes')
-	if mode == 'subrubrik':
-		subrubrik(url)
+# START #
+start()
