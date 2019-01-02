@@ -1,0 +1,29 @@
+<settings>
+     <!--<setting label="Certifikatsprüfung" type="bool" id="cert" default="true"/>
+     <setting id="user" type="text" label="Email" default=""/>
+     <setting id="pass" type="text" label="Password" default=""/>
+     <setting id="kodi18" type="bool" label="Kodi 18 ab 15.8.2017" default="false"/>
+     <setting id="freeonly" type="bool" label="Nur Freie Anzeigen" default="false" visible="false"/>
+     <setting label="Cache Zeitraum" type="slider" id="cachetime" default="24" range="0,1,100" option="int" />     
+     <setting id="inputstreamcomp" type="bool" label="Inputstream Kompatibles Kodi Version" default="false"/>-->
+	 
+	 <setting label="Brandenburg Aktuell" type="bool" id="rbb" default="true"/>
+	 <setting label="Tagesschau" type="bool" id="ts" default="true"/>
+	 <setting label="Tagesschau24" type="bool" id="ts24" default="true"/>
+	 <setting label="Heute" type="bool" id="ht" default="true"/>
+	 <setting label="Heute - in Europa" type="bool" id="hte" default="true"/>
+	 <setting label="Heute - in Deutschland" type="bool" id="htd" default="true"/>
+	 <setting label="Heute Plus " type="bool" id="htp" default="true"/>
+	 <setting label="MDR Heute " type="bool" id="mdrh" default="true"/>
+	 <setting label="Heute Journal" type="bool" id="htj" default="true"/>
+	 <setting label="SR Aktuell" type="bool" id="sr" default="true"/>
+	 <setting label="MDR Aktuell" type="bool" id="mdra" default="true"/>
+	 <setting label="NDR Aktuell" type="bool" id="ndra" default="true"/>
+	 <setting label="SR Aktueller Bericht" type="bool" id="srb" default="true"/>
+	 <setting label="WDR Aktuelle Stunde" type="bool" id="wdras" default="true"/>
+	 <setting label="SWR Aktuell" type="bool" id="swra" default="true"/>
+	 <setting label="HR Hessenschau" type="bool" id="hra" default="true"/>
+	 <setting label="BR Frankenschau Aktuell" type="bool" id="brfa" default="true"/>
+	 
+	 
+</settings>
