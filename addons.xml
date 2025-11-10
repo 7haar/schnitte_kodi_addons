@@ -1,51 +1,33 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version='1.0' encoding='utf-8'?>
 <addons>
-<addon id="plugin.video.oho.checkeins" name="Checkeins" version="0.0.4" provider-name="oho">
-    <requires>
-        <import addon="xbmc.python" version="2.24.0"/>
-        <import addon="script.module.requests" version="2.12.4"/>
-    </requires>
-    <extension point="xbmc.python.pluginsource" library="default.py">
-        <provides>video</provides>
-    </extension>
-  <extension point="xbmc.addon.metadata">
-    <summary lang="de">Videos von Checkeins.de</summary>
-    <summary lang="en">Video from Checkeins.de</summary>
-    <description lang="en">Video from Checkeins.de</description>
-    <description lang="de">Videos von Checkeins.de</description>
-    <website></website>
-    <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
-    <source></source>
-    <forum></forum>
-    <email></email>
-    <platform>all</platform>
-	<news>
-   - test
-   </news>
-  </extension>
-</addon>
-<addon id="plugin.video.oho.newstv" name="NewsTV" version="0.0.9" provider-name="oho">
-    <requires>
-        <import addon="xbmc.python" version="2.24.0"/>
-        <import addon="script.module.requests" version="2.12.4"/>
-    </requires>
-    <extension point="xbmc.python.pluginsource" library="default.py">
-        <provides>video</provides>
-    </extension>
-  <extension point="xbmc.addon.metadata">
-    <summary lang="de">NewsTV</summary>
-    <summary lang="en">NewsTV</summary>
-    <description lang="en">NewsTV</description>
-    <description lang="de">NewsTV</description>
-    <website></website>
-    <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
-    <source></source>
-    <forum></forum>
-    <email></email>
-    <platform>all</platform>
-	<news>
-   - test
-   </news>
-  </extension>
-</addon>
+    <addon id="plugin.video.wl" name="MyWatchlist" version="0.1.1" provider-name="OHO">
+        <requires>
+            <import addon="xbmc.python" version="3.0.0"/>
+        </requires>
+        <!-- Hauptplugin -->
+        <extension point="xbmc.python.pluginsource" library="default.py">
+            <provides>video executable</provides>
+        </extension>
+        <extension point="xbmc.python.script" library="lib/script.py"/>
+        <!-- Kontextmenü-Eintrag -->
+        <extension point="kodi.context.item">
+            <menu id="kodi.core.main">
+              <item library="context.py">
+                <label>[COLOR goldenrod]Watchlist[/COLOR]</label>
+                <visible>True</visible>
+              </item>
+            </menu>
+        </extension>
+        <extension point="xbmc.addon.metadata">
+            <reuselanguageinvoker>false</reuselanguageinvoker>
+            <summary lang="de_de">MyWatchlist</summary>
+            <description>Füge Videos und Verzeichnisse aus beliebigen Addons zur Watchlist hinzu und verwalte sie.</description>
+            <disclaimer lang="de_de"></disclaimer>
+            <platform>all</platform>
+            <assets>
+                <icon>resources/images/icon.png</icon>
+                <fanart>resources/images/fanart.jpg</fanart>
+            </assets>
+        </extension>
+    </addon>
 </addons>
