@@ -1,5 +1,0 @@
-<settings>
-     <setting id="user" type="text" label="Email" default=""/>
-     <setting id="pass" type="text" label="Password" default=""/>
-     <setting id="quality" type="select" label="Qualität" default="high" values="high|standard|hd|low200|low400" />
-</settings>
