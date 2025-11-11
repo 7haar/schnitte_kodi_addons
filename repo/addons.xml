@@ -22,8 +22,8 @@
         <disclaimer lang="de_de" />
         <platform>all</platform>
         <assets>
-			<icon>resources/images/icon.png</icon>
-			<fanart>resources/images/fanart.jpg</fanart>
+            <icon>resources/images/icon.png</icon>
+	        <fanart>resources/images/fanart.jpg</fanart>
 		</assets>
     </extension>
 </addon></addons>
