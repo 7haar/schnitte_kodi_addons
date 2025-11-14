@@ -341,7 +341,10 @@ def play_switch(file_path,list):
         play_item.setArt({'thumbnail':thumbnail,'fanart':fanart,'poster':poster,'landscape':thumbnail})
         info_tag = play_item.getVideoInfoTag()
         info_tag.setPlot(plot)
-        xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
+        try:
+            xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
+        except:
+            xbmc.executebuiltin(f"PlayMedia({use_path})")
         
 
 # --------------------------------------------------------
