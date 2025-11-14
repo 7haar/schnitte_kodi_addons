@@ -111,5 +111,19 @@
                 </setting>
             </group>
         </category>
+        <category id="info" type="string" label="30100" help="">
+            <group id="5" label="30102">
+                <setting id="it" type="string" label="30101" help="">
+                    <level>0</level>
+                    <default/>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action">
+                        <data>RunScript(plugin.video.wl,it)</data>
+                    </control>
+                </setting>
+            </group>
+        </category>
     </section>
 </settings>
