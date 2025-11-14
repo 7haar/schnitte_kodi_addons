@@ -77,25 +77,27 @@ def add_to_watchlist():
     title = xbmc.getInfoLabel("ListItem.Label") or info.getTitle()
     plot = info.getPlot() or xbmc.getInfoLabel("ListItem.Plot") or title
     year = info.getYear() or xbmc.getInfoLabel("ListItem.Year")
-    path = xbmc.getInfoLabel("ListItem.FileNameAndPath")
-    thumb = xbmc.getInfoLabel("ListItem.Thumb")
-    poster = xbmc.getInfoLabel("ListItem.Art(poster)") or thumb
-    fanart = xbmc.getInfoLabel("ListItem.Art(fanart)") or thumb
+    path = xbmc.getInfoLabel("ListItem.FileNameAndPath") or xbmc.getInfoLabel('ListItem.FolderPath')
+    poster = xbmc.getInfoLabel("ListItem.Art(poster)")
+    fanart = xbmc.getInfoLabel("ListItem.Art(fanart)")
     landscape = xbmc.getInfoLabel('ListItem.Art(landscape)') or fanart
+    thumb = xbmc.getInfoLabel("ListItem.Thumb") or landscape
     is_playable = xbmc.getInfoLabel('ListItem.Property(IsPlayable)').lower() == "true"
     DBTYPE = xbmc.getInfoLabel('ListItem.DBTYPE')
     
     
     VIDEO_TYPES = ("episode", "episodes", "movie", "movies", "video")
     fileorfolder = "folder"
-    filetype = "x"
+    #filetype = "x"
 
     if DBTYPE:
         if DBTYPE.lower() in VIDEO_TYPES:
             #filetype = DBTYPE.lower()
             fileorfolder = 'file'
+    '''
     else:
         filetype = "episode" if is_playable == "true" else "x"      
+    '''
     
     #DEBUG
     #debug = "Playable: " + str(is_playable) + "\nDBTYPE: " + str(DBTYPE) + "\nfiletype: " + str(fileorfolder)
@@ -296,13 +298,14 @@ def play_switch(file_path,list):
             #path = item['path']
             break
     save_watchlist(watchlist,list)
-
+    aw = ("plugin://","videodb://")
     if fileorfolder == 'folder':
         if file_path.startswith('addons://'):
             match = re.match(r'addons:\/\/user\/(.*)', file_path)
             addon_id = match.group(1)
             full = 'RunAddon(%s)' % addon_id
-        elif file_path.startswith('plugin://'):
+        #elif file_path.startswith('plugin://'): 
+        elif any(file_path.startswith(sw) for sw in aw):
             epath = quote(file_path, safe=':/?&=%')
             full = f'ActivateWindow(10025,"{epath}",return)'
             
