@@ -7,6 +7,7 @@ import xbmcaddon
 
 ADDON = xbmcaddon.Addon()  
 ADDON_ID = "plugin.video.wl"
+LANGID = ADDON.getLocalizedString
 DATA_PATH = xbmcvfs.translatePath(f"special://profile/addon_data/{ADDON_ID}/")
 
 #WATCHLIST_FILE = xbmcvfs.translatePath(f"special://profile/addon_data/{ADDON_ID}/watchlist.json")
@@ -35,8 +36,8 @@ def restore():
     menu = []
     lists = list_json_lists(".baq")
     if len(lists) > 0:
-        heading = "Lists to restore"
-        menu.append("all")
+        heading = f"{LANGID(30215)}"
+        menu.append(f"{LANGID(30216)}")
         for item in lists:
             menu.append(item)
         sel = xbmcgui.Dialog().select(heading, menu)
@@ -47,7 +48,7 @@ def restore():
                 old_path = os.path.join(DATA_PATH, old_name)
                 new_path = os.path.join(DATA_PATH, new_name)
                 os.rename(old_path, new_path)
-            xbmcgui.Dialog().notification("Info", "all lists restored", xbmcgui.NOTIFICATION_INFO, 2000)
+            xbmcgui.Dialog().notification(f"{LANGID(30100)}", f"{LANGID(30217)}", xbmcgui.NOTIFICATION_INFO, 2000)
         elif sel > 0:
             it = lists[sel-1]
             old_name = f"{it}.baq"
@@ -55,9 +56,9 @@ def restore():
             old_path = os.path.join(DATA_PATH, old_name)
             new_path = os.path.join(DATA_PATH, new_name)
             os.rename(old_path, new_path)
-            xbmcgui.Dialog().notification("Info", f"{it} restored", xbmcgui.NOTIFICATION_INFO, 2000)
+            xbmcgui.Dialog().notification(f"{LANGID(30100)}", f"{it} {LANGID(30218)}", xbmcgui.NOTIFICATION_INFO, 2000)
     else:
-        xbmcgui.Dialog().notification("Info", "no recoverable lists", xbmcgui.NOTIFICATION_INFO, 2000)
+        xbmcgui.Dialog().notification(f"{LANGID(30100)}", f"{LANGID(30219)}", xbmcgui.NOTIFICATION_INFO, 2000)
 
 
 def clean_str(s):
