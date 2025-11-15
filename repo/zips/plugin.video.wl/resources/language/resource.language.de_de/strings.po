@@ -68,3 +68,87 @@ msgstr "Dauerhaft löschen"
 msgctxt "#30014"
 msgid "Restore lists"
 msgstr "Listen wiederherstellen"
+
+# default.py
+msgctxt "#30200"
+msgid "added"
+msgstr "hinzugefügt"
+
+msgctxt "#30201"
+msgid "No elements to play"
+msgstr "Keine Elemente zum abspielen"
+
+msgctxt "#30202"
+msgid "New list"
+msgstr "Neue Liste"
+
+msgctxt "#30203"
+msgid "Add to"
+msgstr "hinzufügen zu"
+
+msgctxt "#30204"
+msgid "Select List"
+msgstr "Liste wählen"
+
+msgctxt "#30205"
+msgid "Name of new list"
+msgstr "Name der neuen Liste"
+
+msgctxt "#30206"
+msgid "Error adding"
+msgstr "Fehler beim Hinzufügen"
+
+msgctxt "#30207"
+msgid "already included"
+msgstr "bereits vorhanden"
+
+msgctxt "#30208"
+msgid "Remove list"
+msgstr "Liste entfernen"
+
+msgctxt "#30209"
+msgid "Play all"
+msgstr "Alle abspielen"
+
+msgctxt "#30210"
+msgid "empty list"
+msgstr "Die Liste ist leer"
+
+msgctxt "#30211"
+msgid "Remove from"
+msgstr "Löschen aus"
+
+msgctxt "#30212"
+msgid "Removed"
+msgstr "Entfernt"
+
+msgctxt "#30213"
+msgid "Error removing"
+msgstr "Fehler beim Entfernen"
+
+msgctxt "#30214"
+msgid "Removed entry"
+msgstr "Eintrag gelöscht"
+
+#utils.py
+msgctxt "#30215"
+msgid "Lists to restore"
+msgstr "Listen zum Wiederherstellen"
+
+msgctxt "#30216"
+msgid "all lists"
+msgstr "Alle Listen"
+
+msgctxt "#30217"
+msgid "All lists restored"
+msgstr "Alle Listen wiederhergestellt"
+
+msgctxt "#30218"
+msgid "restored"
+msgstr "wiederhergestellt"
+
+msgctxt "#30219"
+msgid "no recoverable lists"
+msgstr "keine wiederherstellbaren Listen"
+
+
