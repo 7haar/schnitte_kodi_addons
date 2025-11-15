@@ -13,6 +13,7 @@ from lib.utils import save_watchlist, load_watchlist, npath, list_json_lists, cl
 
 ADDON = xbmcaddon.Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
+LANGID = ADDON.getLocalizedString
 HANDLE = int(sys.argv[1])
 WINDOW = xbmcgui.Window(10000)
 IMG_PATH = xbmcvfs.translatePath(f"special://home/addons/{ADDON_ID}/resources/images/")
@@ -66,7 +67,7 @@ def playlist(list):
     if playlist.size() == 0:
         #xbmc.log("Playlist ist leer", level=xbmc.LOGDEBUG)
         # optional: Hinweis für Nutzer
-        xbmcgui.Dialog().notification("Info", "Keine Elemente zum abspielen", xbmcgui.NOTIFICATION_INFO, 2000)
+        xbmcgui.Dialog().notification(f"{LANGID(30100)}", f"{LANGID(30201)}", xbmcgui.NOTIFICATION_INFO, 2000)
     else:
         player = xbmc.Player()
         player.play(playlist)
@@ -94,11 +95,8 @@ def add_to_watchlist():
         if DBTYPE.lower() in VIDEO_TYPES:
             #filetype = DBTYPE.lower()
             fileorfolder = 'file'
-    '''
-    else:
-        filetype = "episode" if is_playable == "true" else "x"      
-    '''
-    
+    elif path.startswith("pvr://"):
+        fileorfolder = 'file'
     #DEBUG
     #debug = "Playable: " + str(is_playable) + "\nDBTYPE: " + str(DBTYPE) + "\nfiletype: " + str(fileorfolder)
     #xbmcgui.Dialog().ok('DEBUG',debug)
@@ -122,16 +120,16 @@ def add_to_watchlist():
     #
     menu = []
     files = list_json_lists()
-    menu.append('[COLOR goldenrod]New List[/COLOR]') #sel = 0
+    menu.append(f"[COLOR goldenrod]{LANGID(30202)}[/COLOR]") #sel = 0
     #menu.append('----------------- ADD TO -----------------------') #  sel = 1
     for x in files:
         menu.append(x)
-    heading = "MyWatchlist - Add to"
+    heading = f"MyWatchlist - {LANGID(30203)}"
     if but_bool:
         but = ADDON.getSetting('sc_list') # 2 0 1
-        pre = xbmcgui.Dialog().yesnocustom(heading, f"Add {item['title']}", f"Add to {wlfile.upper()}", "Select List ...", f"Add to {but.upper()}", defaultbutton=xbmcgui.DLG_YESNO_CUSTOM_BTN)
+        pre = xbmcgui.Dialog().yesnocustom(heading, f"Add {item['title']}", f"{LANGID(30203)} {wlfile.upper()}", f"{LANGID(30204)}", f"{LANGID(30203)} {but.upper()}", defaultbutton=xbmcgui.DLG_YESNO_CUSTOM_BTN)
     else:
-        pre = xbmcgui.Dialog().yesnocustom(heading, f"Add {item['title']}", f"Add to {wlfile.upper()}", "Cancel", "Select List ...", defaultbutton=xbmcgui.DLG_YESNO_CUSTOM_BTN)
+        pre = xbmcgui.Dialog().yesnocustom(heading, f"Add {item['title']}", f"{LANGID(30203)} {wlfile.upper()}", f"{LANGID(222)}", f"{LANGID(30204)}", defaultbutton=xbmcgui.DLG_YESNO_CUSTOM_BTN)
     # DEBUG
     #xbmcgui.Dialog().ok("DEBUG",str(pre))
     if but_bool and pre == 1:
@@ -145,7 +143,7 @@ def add_to_watchlist():
         if sel == -1:
             return
         if sel == 0:
-            new_name = xbmcgui.Dialog().input("Name der neuen Liste")
+            new_name = xbmcgui.Dialog().input(f"{LANGID(30205)}")
             if not new_name:
                 return
             new_name = clean_str(new_name.strip())
@@ -166,11 +164,11 @@ def add_to_watchlist():
     if not any(npath(x.get('path')) == npath(path) for x in watchlist):
         watchlist.append(item)
         if save_watchlist(watchlist,filename):
-            xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' added", xbmcgui.NOTIFICATION_INFO, 2000)
+            xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' {LANGID(30200)}", xbmcgui.NOTIFICATION_INFO, 2000)
         else:
-            xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' Error adding", xbmcgui.NOTIFICATION_INFO, 2000)
+            xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' {LANGID(30206)}", xbmcgui.NOTIFICATION_INFO, 2000)
     else:
-        xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' already included", xbmcgui.NOTIFICATION_INFO, 2000)
+        xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' {LANGID(30207)}", xbmcgui.NOTIFICATION_INFO, 2000)
 
 def listing():
     lists = list_json_lists()
@@ -189,7 +187,7 @@ def listing():
         remove_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=removelist&json={list})"
         playlist_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=playlist&json={list})"
         #script_cmd = "RunScript(plugin.video.wl)"
-        li.addContextMenuItems([("[COLOR goldenrod]remove list[/COLOR]", remove_cmd),("[COLOR goldenrod]play all[/COLOR]", playlist_cmd)])
+        li.addContextMenuItems([(f"[COLOR goldenrod]{LANGID(30208)}[/COLOR]", remove_cmd),(f"[COLOR goldenrod]{LANGID(30209)}[/COLOR]", playlist_cmd)])
         xbmcplugin.addDirectoryItem(handle=HANDLE, url=url, listitem=li, isFolder=is_folder)
         
     xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
@@ -205,7 +203,7 @@ def show_watchlist(list):
     
     
     if not watchlist:
-        xbmcgui.Dialog().notification(str(list).upper(), "empty list", xbmcgui.NOTIFICATION_INFO, 2000)
+        xbmcgui.Dialog().notification(str(list).upper(), f"{LANGID(30210)}", xbmcgui.NOTIFICATION_INFO, 2000)
         xbmcplugin.endOfDirectory(HANDLE)
         return
     
@@ -237,7 +235,7 @@ def show_watchlist(list):
         encoded_path = quote(item['path'], safe='')
         remove_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=remove&json={list}&file={encoded_path})"
         playlist_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=playlist&json={list})"
-        li.addContextMenuItems([(f"[COLOR goldenrod]remove from {list}[/COLOR]", remove_cmd),("[COLOR goldenrod]play all[/COLOR]", playlist_cmd)])
+        li.addContextMenuItems([(f"[COLOR goldenrod]{LANGID(30211)} {list}[/COLOR]", remove_cmd),(f"[COLOR goldenrod]{LANGID(30209)}[/COLOR]", playlist_cmd)])
         
         url = f"plugin://{ADDON_ID}/?action=play_switch&json={list}&file={encoded_path}"
         
@@ -261,9 +259,9 @@ def remove_list(list):
     perm = ADDON.getSetting('perm') == 'true'
     dl = delete_file(f"{list}.json",perm)
     if dl:
-        xbmcgui.Dialog().notification(f"{list}", "list removed", xbmcgui.NOTIFICATION_INFO, 2000)
+        xbmcgui.Dialog().notification(f"{str(list).upper()}", f"{LANGID(30212)}", xbmcgui.NOTIFICATION_INFO, 2000)
     else:
-        xbmcgui.Dialog().notification(f"{list}", "Error removing", xbmcgui.NOTIFICATION_INFO, 2000)
+        xbmcgui.Dialog().notification(f"{str(list).upper()}", f"{LANGID(30213)}", xbmcgui.NOTIFICATION_INFO, 2000)
     xbmc.executebuiltin("Container.Refresh")
     
 def remove_from_watchlist(file_path, list):
@@ -276,7 +274,7 @@ def remove_from_watchlist(file_path, list):
         if item['path'] != file_path:
             new_list.append(item)
     save_watchlist(new_list, list)
-    xbmcgui.Dialog().notification(f"{str(list).upper()}", "Eintrag gelöscht", xbmcgui.NOTIFICATION_INFO, 2000)
+    xbmcgui.Dialog().notification(f"{str(list).upper()}", f"{LANGID(30214)}", xbmcgui.NOTIFICATION_INFO, 2000)
     xbmc.executebuiltin("Container.Refresh")
 
 def play_switch(file_path,list):
@@ -341,11 +339,13 @@ def play_switch(file_path,list):
         play_item.setArt({'thumbnail':thumbnail,'fanart':fanart,'poster':poster,'landscape':thumbnail})
         info_tag = play_item.getVideoInfoTag()
         info_tag.setPlot(plot)
-        try:
-            xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
-        except:
+        if use_path.startswith('pvr://'):
             xbmc.executebuiltin(f"PlayMedia({use_path})")
-        
+        else:
+            try:
+                xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
+            except:
+                xbmc.executebuiltin(f"PlayMedia({use_path})")            
 
 # --------------------------------------------------------
 # Router
