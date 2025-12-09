@@ -3,12 +3,10 @@
     <requires>
         <import addon="xbmc.python" version="3.0.0" />
     </requires>
-    
     <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video executable</provides>
     </extension>
-    <extension point="xbmc.python.script" library="lib/script.py" />
-    
+    <extension point="xbmc.python.script" library="lib/script.py" />    
     <extension point="kodi.context.item">
 		<menu id="kodi.core.main">
 		  <item library="context.py">
@@ -28,11 +26,20 @@
 			<fanart>resources/images/fanart.jpg</fanart>
 		</assets>
     </extension>
+</addon>
+<addon id="plugin.video.mtl" name="MTL" version="1.0.2" provider-name="oho">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="script.module.requests" version="2.12.4"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
     <extension point="xbmc.addon.metadata">
         <reuselanguageinvoker>false</reuselanguageinvoker>
         <summary lang="de_de">MTL</summary>
         <summary lang="eng">MTL</summary>
-        <description>MTL: Vereine Sendungen der Mediatheken von ARD, ZDF und Arte in einer Liste und lasse dir die neusten Folgen anzeigen, mit wahlweise dynamisch geladenen Bildern</description>
+        <description>Erstelle Listen aus Sendungen der ARD und ZDF Mediathek und lasse dir die neusten Sendungen anzeigen.</description>
         <disclaimer lang="de_de"></disclaimer>
         <platform>all</platform>
         <assets>
@@ -40,4 +47,5 @@
 			<fanart>resources/images/fanart.png</fanart>
 		</assets>
     </extension>
-</addon></addons>
+</addon>
+</addons>
