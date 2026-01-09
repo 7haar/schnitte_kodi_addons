@@ -27,13 +27,15 @@ ADDON_ID = ADDON.getAddonInfo('id')
 LANGID = ADDON.getLocalizedString
 URL = sys.argv[0]
 HANDLE = int(sys.argv[1])
+#WINDOW = xbmcgui.Window(10000)
+WINDOW = xbmcgui.Window(xbmcgui.getCurrentWindowId())
 SETTING = ADDON.getSetting
-
+_SEARCH_NAME_ = 'xxmtlxxsearch'
 d = xbmcgui.Dialog()
 
 # Get addon base path
-#ADDON_PATH = xbmcvfs.translatePath(Addon().getAddonInfo('path'))
-#IMG_DIR = os.path.join(ADDON_PATH, 'resources', 'media')
+ADDON_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo('path'))
+IMG_DIR = os.path.join(ADDON_PATH, 'resources', 'images')
 
 '''
 def selectlist(label, list_items, details=False):
@@ -65,10 +67,13 @@ def safe_list(items,list):
         'settings': items['settings'],
         'items': items_list
         }
+    list_name = list
+    if list == _SEARCH_NAME_:
+        list_name = "Suche"
     if u.save_list(data,list):
-        d.notification(list.upper(), f"Gespeichert", xbmcgui.NOTIFICATION_INFO, 2000)
+        d.notification(list_name.upper(), f"Gespeichert", xbmcgui.NOTIFICATION_INFO, 2000)
     else:
-        d.notification(list.upper(), f"Fehler beim Speichern", xbmcgui.NOTIFICATION_INFO, 2000)
+        d.notification(list_name.upper(), f"Fehler beim Speichern", xbmcgui.NOTIFICATION_INFO, 2000)
 
 def create_result_items(j):
     items = []
@@ -94,6 +99,8 @@ def create_item(query,channel=None):
     while not item:
         result = mvw_txt(query)
         result_items = create_result_items(result)
+        #d.ok('debug',str(result))
+        #d.ok('debug',str(result_items))
         titles = [f"{i.get('title','')} | {i.get('topic','')} | {i.get('channel','')}" for i in result_items if i.get('channel') == channel or channel is None]
         sel = d.select('Sendung wählen',titles)
         if sel == -1:
@@ -109,12 +116,43 @@ def create_item(query,channel=None):
             break
     return item
 
+def search(s=None):
+    
+    if s:
+        searchstring = d.input('..Suche..')
+    else:
+        searchstring = WINDOW.getProperty('mtl.search') or d.input('..Suche..')
+    if not searchstring:
+        return
+    '''   
+    
+    if WINDOW.getProperty('mtl.listing') and WINDOW.getProperty('mtl.search'):
+   
+    '''
+    WINDOW.setProperty('mtl.search', searchstring)
+    items = {'settings':{},'items':[]}
+    i = {}
+    name = _SEARCH_NAME_
+    items['settings']['fps'] = 1
+    items['settings']['duration_min'] = 0
+    items['settings']['static'] = ""
+    i['channel'] = ''
+    i['title'] = searchstring
+    i['topic'] = ''
+    i['thumb'] = ''
+    i['fanart'] = ''
+    i['landscape'] = ''
+    items['items'].append(i)
+    save = safe_list(items,name)
+    xbmc.executebuiltin('ActivateWindow(busydialognocancel)')
+    list_videos_switch(name)
+    xbmc.executebuiltin('Dialog.Close(busydialognocancel)')
 
 def payload_s(data, size=50, dur=600):
     #u.log_info(str(data))
     channels = None
-    if any('channel' in d for d in data):
-        channels = list(set(d['channel'] for d in data))
+    if any('channel' in d and d['channel'] for d in data):
+        channels = list({d['channel'] for d in data if 'channel' in d and d['channel']})
     #d.ok('debug',str(channels))
     payload = {
     'queries': (
@@ -125,7 +163,6 @@ def payload_s(data, size=50, dur=600):
     ),
     'sortBy': 'timestamp',
     'sortOrder': 'desc',
-    #'future': False,
     'future': True,
     'offset': 0,
     'size': size,
@@ -158,8 +195,10 @@ def mvw(payload):
     return j
 
 
-def sort_videos(videos,items,fps):
+def sort_videos(videos,items,fps,search=False):
     #d.ok('size videos_sort',str(len(videos)))
+    if search:
+        return videos
     videos_sort = []
     list1 = []
     list2 = {}
@@ -180,7 +219,7 @@ def sort_videos(videos,items,fps):
         title = video.get('title')
         used_key = None
         name = ""
-        out_list =("rdensprache)","Audiodeskription)","Untertitel)","isch)","version)","(nld)")
+        out_list =("rdensprache)","Audiodeskription","Untertitel)","isch)","version)","(nld)")
         out = any(elem in title for elem in out_list)
         #pat = "\(.+\)"
         #out = bool(re.search(pat, title))
@@ -209,6 +248,7 @@ def sort_videos(videos,items,fps):
 
 
 def mvw_list(name):
+    search = False
     item_list = u.load_list(name)
     #d.ok('debug load_list nvw_list',str(item_list))
     items = []
@@ -222,8 +262,10 @@ def mvw_list(name):
     static = item_list['settings']['static']
     j = mvw(payload_s(items,size,dur))
     videos = create_result_items(j)
-    #u.log_info(str(videos))
-    videos_sort = sort_videos(videos, item_list['items'], fps)
+    #d.textviewer('debug',str(videos))
+    if name == _SEARCH_NAME_:
+        search = True
+    videos_sort = sort_videos(videos, item_list['items'], fps, search)
     #d.textviewer('debug',str(videos_sort))
     
     return videos_sort, static
@@ -300,8 +342,13 @@ def switch_img(url):
     arte = "arte"
     zdf = True
     sat = "3sat"
+    kika = "kika"
+    dw = "p.dw.com"
     if ard in splitter[2]:
         img_url = ard_img(splitter[-1])
+    elif kika in splitter[2]:
+        video_id = splitter[-1].replace(".html","")
+        img_url = kika_img(video_id)
     elif arte in splitter[2]:
         img_url = arte_img(splitter[5])
     elif any(sub in splitter[2] for sub in ("3sat", "zdf")):
@@ -309,16 +356,33 @@ def switch_img(url):
         if "3sat" in splitter[2]:
             zdf = False
         img_url = zdf_img(video_id,zdf)
+    elif dw in splitter[2]:
+        img_url = f"{IMG_DIR}/dw_logo.jpg"
     else:
         img_url = False
     #u.log_info(str(img_url))
     return img_url
-
+    
+def kika_img(url):
+    video_id = url
+    kikaapi_url = f"https://www.kika.de/_next-api/proxy/v1/videos/{video_id}"
+    #d.ok('kika_img',kikaapi_url)
+    req = urllib.request.Request(kikaapi_url, data=None,headers={'content-type': 'text/plain'})
+    try:
+        response = urllib.request.urlopen(req)
+        j = json.loads(response.read())
+        #d.textviewer(img_url'debug reimg_urlvw',str(j))
+        img_url = f"https://www.kika.de{j['teaserImage']['urlScheme']}".replace("**imageVariant**","tlarge169").replace("**width**","1920")
+        #d.ok('kika_img',str(img_url))
+    except:
+        img_url = False
+    return img_url
 
 def ard_img(url):
     video_id = url
     #d.ok('ard',video_id)
     ardapi_url = f"https://api.ardmediathek.de/page-gateway/mediacollection/{video_id}?devicetype=pc&embedded=true"
+    #ardapi_url = f"https://api.ardmediathek.de/page-gateway/mediacollection/{video_id}?devicetype=pc&embedded=true"
     req = urllib.request.Request(ardapi_url, data=None,headers={'content-type': 'text/plain'})
     try:
         response = urllib.request.urlopen(req, timeout=10)
@@ -392,7 +456,9 @@ def zdf_img(url,z):
 #################
 
 def listing():
-    lists = u.list_json_lists()
+    WINDOW.setProperty('mtl.listing', 'activate')
+    WINDOW.clearProperty('mtl.search')
+    lists = u.list_json_lists(_SEARCH_NAME_) # Suche wird nicht angezeigt
     xbmcplugin.setContent(HANDLE, 'videos')
     xbmcplugin.setPluginCategory(HANDLE, 'MTL')
     for list in lists:
@@ -412,6 +478,13 @@ def listing():
     is_folder = True
     url = f"plugin://{ADDON_ID}/?action=newlist"
     xbmcplugin.addDirectoryItem(handle=HANDLE, url=url, listitem=li, isFolder=is_folder)
+    ### SUCHE ###
+    li = xbmcgui.ListItem(label="...Suche")
+    is_folder = True
+    url = f"plugin://{ADDON_ID}/?action=search&s="
+    #url = f"plugin://{ADDON_ID}/?action=search_input"
+    xbmcplugin.addDirectoryItem(handle=HANDLE, url=url, listitem=li, isFolder=is_folder)
+    ###
     xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
@@ -453,6 +526,9 @@ def list_videos(videos, list, max_workers=20):
     results = []
     list_res = u.load_list_res(list)
     temp = {}
+    list_name = list
+    if list == _SEARCH_NAME_:
+        list_name = "Suche"
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futures = {ex.submit(create_li, v, list_res): v for v in videos}
         for fut in as_completed(futures):
@@ -460,17 +536,20 @@ def list_videos(videos, list, max_workers=20):
             if res:
                 results.append(res)
     results.sort(key=lambda item: int(item[2]), reverse=True)
-    for url, list_item, ts, res_item in results:
-        #u.log_info(str(res_item))
-        a,b = res_item
-        temp[a] = b
-        try:
-            xbmcplugin.addDirectoryItem(HANDLE, url, list_item, False)
-        except Exception as e:
-            u.log_error(f"addDirectoryItem error: {e}")
-    if temp != list_res:
-        u.save_list(temp,list,'res')
-    xbmcplugin.endOfDirectory(HANDLE)
+    if results:
+        for url, list_item, ts, res_item in results:
+            #u.log_info(str(res_item))
+            a,b = res_item
+            temp[a] = b
+            try:
+                xbmcplugin.addDirectoryItem(HANDLE, url, list_item, False)
+            except Exception as e:
+                u.log_error(f"addDirectoryItem error: {e}")
+        if temp != list_res:
+            u.save_list(temp,list,'res')
+        xbmcplugin.endOfDirectory(HANDLE)
+    else:
+        d.notification(list_name, "keine Ergebnisse", xbmcgui.NOTIFICATION_INFO, 2000)
 
 
 #STATIC
@@ -655,12 +734,26 @@ def remove_list(list):
 #######################
 
 def router(paramstring):
+    #WINDOW.clearProperties()
+    '''
+    try:
+        check = bool(WINDOW.getProperty('mtl.listing') and WINDOW.getProperty('mtl.search'))
+    except Exception:
+        check = False
+    #d.ok('ARSCH',str(check))
+    if not check:
+        WINDOW.clearProperty('mtl.search')
+    '''
     params = parse_qs(paramstring[1:])
     action = params.get('action', [None])[0]
-    
     file_path = params.get('file', [''])[0]    
     json = params.get('json', [None])[0]
-    
+    s = params.get('s', [None])[0]
+    '''
+    if s:
+        d.ok('searchstring_router',s)
+        WINDOW.setProperty("mtl.search", s)
+    '''
     if action == "newlist":
         newlist(json)
     elif action == "remove":
@@ -673,6 +766,10 @@ def router(paramstring):
         list_videos_switch(json)
     elif action == "playlist":
         playlist(json)
+    elif action == "search_input":
+        search_input()  
+    elif action == "search":
+        search(s)
     else:
         listing()
 
