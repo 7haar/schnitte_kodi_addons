@@ -7,11 +7,22 @@ import xbmcaddon
 import xbmc
 import datetime
 import requests
+#from contextlib import contextmanager
 
 ADDON = xbmcaddon.Addon()  
 ADDON_ID = ADDON.getAddonInfo('id')
 LANGID = ADDON.getLocalizedString
 DATA_PATH = xbmcvfs.translatePath(f"special://profile/addon_data/{ADDON_ID}/")
+'''
+@contextmanager
+def busy_spinner():
+    xbmc.executebuiltin('Dialog.Update')
+    xbmc.executebuiltin('ActivateWindow(10138)')  # Busy spinner on
+    try:
+        yield
+    finally:
+        xbmc.executebuiltin('Dialog.Close(10138)')  # Busy spinner off
+'''
 
 def debug_txt(txt):
     d = xbmcgui.Dialog()
@@ -35,12 +46,20 @@ def ensure_data_path():
     if not xbmcvfs.exists(DATA_PATH):
         xbmcvfs.mkdir(DATA_PATH)
 
-def list_json_lists(ext=".json"):
+def list_json_lists(out="", ext=".json"):
     ensure_data_path()
-    files = []
     files = next(os.walk(DATA_PATH), (None, None, []))[2]
-    #xbmcgui.Dialog().ok("MTL", str(files))
-    names = [os.path.splitext(f)[0] for f in files if f.lower().endswith(ext)]
+    names = []
+    for f in files:
+        try:
+            if f.lower().endswith(ext):
+                name = os.path.splitext(f)[0]
+                if out and name == out:
+                    continue
+                names.append(name)
+        except Exception:
+            # Fehlerhafte Einträge überspringen
+            continue
     names.sort()
     return names
 
@@ -56,7 +75,10 @@ def load_list(list,ext="json"):
         #return []
         return {}
     with open(fullfilepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        try:
+            return json.load(f)
+        except:
+            return {}
 
 def save_list(data, list,ext="json"):
     name = f"{list}.{ext}".lower()
