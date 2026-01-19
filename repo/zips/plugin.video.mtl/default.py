@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# MTL
-# to do:
 import os
 import sys
 
@@ -19,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib.request,urllib.error,urllib.parse
 import json
 import re
+import time
 
 
 
@@ -27,8 +26,8 @@ ADDON_ID = ADDON.getAddonInfo('id')
 LANGID = ADDON.getLocalizedString
 URL = sys.argv[0]
 HANDLE = int(sys.argv[1])
-#WINDOW = xbmcgui.Window(10000)
-WINDOW = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+WINDOW = xbmcgui.Window(10000)
+#WINDOW = xbmcgui.Window(xbmcgui.getCurrentWindowId())
 SETTING = ADDON.getSetting
 _SEARCH_NAME_ = 'xxmtlxxsearch'
 d = xbmcgui.Dialog()
@@ -90,7 +89,9 @@ def create_result_items(j):
         item["timestamp"] = i["timestamp"]
         item["duration"] = i["duration"]
         item["url_website"] = i["url_website"]
-        item["url_video"] = i["url_video_hd"] or i["url_video"] or i["url_video_low"]
+        sources = [i.get("url_video_hd"),i.get("url_video"),i.get("url_video_low")]
+        item["url_video"] = next((s for s in sources if s), None)
+        item["url_video_alt"] = next((s for s in sources if s and s != item["url_video"]), None)
         items.append(item)
     return items
 
@@ -117,18 +118,15 @@ def create_item(query,channel=None):
     return item
 
 def search(s=None):
-    
     if s:
-        searchstring = d.input('..Suche..')
+        if "{" in s:
+            return
+        else:
+            searchstring = s
     else:
         searchstring = WINDOW.getProperty('mtl.search') or d.input('..Suche..')
     if not searchstring:
         return
-    '''   
-    
-    if WINDOW.getProperty('mtl.listing') and WINDOW.getProperty('mtl.search'):
-   
-    '''
     WINDOW.setProperty('mtl.search', searchstring)
     items = {'settings':{},'items':[]}
     i = {}
@@ -219,7 +217,7 @@ def sort_videos(videos,items,fps,search=False):
         title = video.get('title')
         used_key = None
         name = ""
-        out_list =("rdensprache)","Audiodeskription","Untertitel)","isch)","version)","(nld)")
+        out_list =("rdensprache)","Audiodeskription","Untertitel)","isch)","version)","(nld)","(OV)","(swe)")
         out = any(elem in title for elem in out_list)
         #pat = "\(.+\)"
         #out = bool(re.search(pat, title))
@@ -276,13 +274,89 @@ def mvw_txt(txt,tt=""):
     j = mvw(payload_s(data))
     return j
 
+def check_url(url, timeout=2):
+    if not url:
+        return False
+    try:
+        req = urllib.request.Request(url, method='GET')
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+             return 200 <= resp.getcode() < 400
+    except Exception:
+        return False
 
-def playvideo(path):
+# ungenutzt
+def get_player_times():
+    active = json.loads(xbmc.executeJSONRPC(json.dumps({"jsonrpc":"2.0","method":"Player.GetActivePlayers","id":1}))).get("result", [])
+    if not active:
+        return 0, 0
+    pid = active[0]["playerid"]
+    props = json.loads(xbmc.executeJSONRPC(json.dumps({
+        "jsonrpc":"2.0","method":"Player.GetProperties",
+        "params":{"playerid": pid, "properties": ["time","totaltime"]},"id":1
+    }))).get("result", {})
+    t = props.get("time", {"hours":0,"minutes":0,"seconds":0})
+    T = props.get("totaltime", {"hours":0,"minutes":0,"seconds":0})
+    return t["hours"]*3600 + t["minutes"]*60 + t["seconds"], T["hours"]*3600 + T["minutes"]*60 + T["seconds"]
+
+
+def playvideo(liste=None, stitle=None):
+    player=xbmc.Player()
+    if player.isPlaying():
+        player.stop()
+    list_res = u.load_list_res(liste)
+    video = list_res.get(stitle, {})
+    list_item = xbmcgui.ListItem(label=video.get('title'))
+    list_item.setArt({'icon': video.get('thumb'),'landscape': video.get('landscape'),'fanart': video.get('fanart')})
+    info_tag = list_item.getVideoInfoTag()
+    info_tag.setMediaType('video')
+    info_tag.setTitle(video.get('title'))
+    info_tag.setPlot(video.get('plot'))
+    info_tag.setDuration(int(video.get('duration', 0)))
+    ### Resume kommt von Kodi ###
+    #info_tag.setResumePoint(video.get('resume', 0), int(video.get('duration', 0)))
+    #info_tag.setPlaycount(video.get('playcount', 0))
+    info_tag.setGenres([video.get('genre')])
+    info_tag.setPlotOutline(video.get('plot_outline'))
+    info_tag.setFirstAired(video.get('first_aired'))
+    list_item.setProperty('IsPlayable', 'true')
+    path = video.get('video_url')
+    alt = video.get('video_url_alt')
+    if not check_url(path):
+        path = alt
+    list_item.setPath(path)
+    
+    xbmcplugin.setResolvedUrl(HANDLE, True, listitem=list_item)   
+    
+    #### RESUME POINT #####
+    player = xbmc.Player()
+    # warten bis player start
+    while not player.isPlaying():
+        xbmc.sleep(100)
+    interval = 30
+    while player.isPlaying():
+        waitTime = time.time() + interval
+        while player.isPlaying() and time.time() < waitTime: # Pause gilt als isPlaying
+            list_res[stitle]['resume'] = round(player.getTime())
+            xbmc.sleep(500)
+            #d.notification("wiedergabe", f"time:{time.time()}|waitTime:{waitTime}|Interval:{interval}s", xbmcgui.NOTIFICATION_INFO, 100)
+    if not player.isPlaying():
+        player.stop()
+        #d.textviewer('stop',str(list_res))
+        if float(list_res[stitle]['resume']) > 0.9 * list_res[stitle]['duration']:
+            list_res[stitle]['playcount'] = 1
+            list_res[stitle]['resume'] = 0
+        u.save_list(list_res,liste,'res')
+        #d.notification("Stop", f"save resume", xbmcgui.NOTIFICATION_INFO, 2000)
+    
+def playvideo2(path,alt):
     play_item = xbmcgui.ListItem()
+    if not check_url(path):
+        path = alt
+    #d.ok('debug playvideo',f"path:{path} alt:{alt}")
     play_item.setPath(path)
     # Pass the item to the Kodi player.
     xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
-
+    
 ################# IMG #######################
 def image_select_dialog(img_list,label="Bild"):
     items = []
@@ -322,7 +396,6 @@ def ard_img_search(topic):
 def arte_img_search(topic):
     token = "Bearer MWZmZjk5NjE1ODgxM2E0MTI2NzY4MzQ5MTZkOWVkYTA1M2U4YjM3NDM2MjEwMDllODRhMjIzZjQwNjBiNGYxYw"
     url = f"https://api-cdn.arte.tv/api/emac/v3/de/web/data/SEARCH_LISTING/?query={quote(topic)}&limit=20"
-    #d.ok('ard_img_search url',url)
     req = urllib.request.Request(url, data=None,headers={'Content-Type': 'text/plain','Authorization': f'{token}','Accept': 'application/json'})
     response = urllib.request.urlopen(req)
     j = json.loads(response.read())
@@ -382,7 +455,6 @@ def ard_img(url):
     video_id = url
     #d.ok('ard',video_id)
     ardapi_url = f"https://api.ardmediathek.de/page-gateway/mediacollection/{video_id}?devicetype=pc&embedded=true"
-    #ardapi_url = f"https://api.ardmediathek.de/page-gateway/mediacollection/{video_id}?devicetype=pc&embedded=true"
     req = urllib.request.Request(ardapi_url, data=None,headers={'content-type': 'text/plain'})
     try:
         response = urllib.request.urlopen(req, timeout=10)
@@ -430,11 +502,15 @@ def zdf_img(url,z):
         host = sat_api
         apitoken = satToken
         channel = sat
-    for i in [2,4,6]:
+    for i in [0,2,4,6]:
         a_url = f"https://www.{channel}.de/assets/{video_id[:-3]}10{i}~1280x720"
         if u.is_reachable(a_url):
             img_url = a_url
-            break
+            return img_url
+        a_url = f"https://www.{channel}.de/assets/{video_id[:-3]}teaser-10{i}~1280x720"
+        if u.is_reachable(a_url):
+            img_url = a_url
+            return img_url
     if not img_url:
         header = "{{'Api-Auth': 'Bearer {0}', 'Host': '{1}'}}".format(apitoken, host)
         header = header.replace("'", "\"")
@@ -489,14 +565,32 @@ def listing():
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 #DYNAMIC
-def create_li(video, list_res):
+def create_li(video, list_res, liste, static):
     try:
         ts = video.get('timestamp','')
-        landscape = list_res.get(f"{video.get('title')}{ts}")
-        if landscape is None:
+        stitle = f"{video.get('title','')}{ts}"
+        #lr = list_res.get(stitle, {})
+        lr = list_res.get(stitle)
+        if isinstance(lr, dict):
+            lr_landscape = lr.get('landscape','')
+            resume = lr.get('resume',0)
+            playcount = lr.get('playcount',0)
+        else:
+            lr_landscape = None
+            resume = 0
+            playcount = 0
+        landscape = None
+        #d.textviewer('create_li static',f"{type(static)}|{str(lr)}")
+        if not static and lr_landscape is None:
             landscape = switch_img(video['url_website'])
+        if lr_landscape:
+            landscape = lr_landscape
+        landscape_item = landscape
+        #landscape = switch_img(video['url_website'])
+        #landscape = list_res.get(stitle, {}).get('landscape','')
+        #d.textviewer("create_li",f"{stitle}|{landscape}")            
         if not landscape:
-            landscape = video.get('landscape')
+            landscape = video.get('landscape','')
         list_item = xbmcgui.ListItem(label=video['title'])
         list_item.setArt({
             'icon': video.get('thumb', ''),
@@ -508,34 +602,58 @@ def create_li(video, list_res):
         info_tag.setTitle(video.get('title', ''))
         info_tag.setPlot(video.get('description', ''))
         info_tag.setDuration(int(video.get('duration', 0)))
+        #info_tag.setResumePoint(float("120"), int(video.get('duration', 0))) # xxx funktioniert, spielt aber noch nicht bei 1 min ab
+        info_tag.setResumePoint(resume, int(video.get('duration', 0)))
+        info_tag.setPlaycount(playcount)
         info_tag.setGenres([video.get('channel', '')])
         info_tag.setPlotOutline(video.get('channel', ''))
         info_tag.setFirstAired(u.datum(video.get('timestamp')))
         list_item.setProperty('IsPlayable', 'true')
-        video_url = quote(video.get('url_video', ''))
-        url = f"plugin://{ADDON_ID}/?action=play&file={video_url}"
-        res_item = (f"{video.get('title','')}{ts}",landscape)
+        video_url = video.get('url_video', '')
+        video_url_alt = video.get('url_video_alt', '')
+        url = f"plugin://{ADDON_ID}/?action=play&json={liste}&stitle={quote(stitle)}"
+        #url = f"plugin://{ADDON_ID}/?action=play&file={video_url}&alt={video_url_alt}"
+        item = {
+                "list":liste,
+                "media_type": "video",
+                "title": video.get("title", ""),
+                "plot": video.get("description", ""),
+                "duration": int(video.get("duration", 0)),
+                "genres": [video.get("channel", "")],
+                "plot_outline": video.get("channel", ""),
+                "first_aired": u.datum(video.get("timestamp")),
+                "icon": video.get("thumb", ""),
+                "landscape": landscape_item,
+                "fanart": video.get("fanart", ""),
+                "resume": resume,
+                "playcount":playcount,
+                "video_url": video_url,
+                "video_url_alt": video_url_alt
+                }
+        res_item = (f"{video.get('title','')}{ts}",item)
         return (url, list_item, ts, res_item)
     except Exception as e:
         u.log_info(f"error creating info for {video.get('title')}: {e}")
         return None
 
-def list_videos(videos, list, max_workers=20):
+def list_videos(videos, liste, static, max_workers=20):
     xbmcplugin.setContent(HANDLE, 'videos')
     items = []
     results = []
-    list_res = u.load_list_res(list)
+    list_res = u.load_list_res(liste)
+    #d.textviewer('list_res',str(list_res))
     temp = {}
-    list_name = list
-    if list == _SEARCH_NAME_:
+    list_name = liste
+    if liste == _SEARCH_NAME_:
         list_name = "Suche"
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        futures = {ex.submit(create_li, v, list_res): v for v in videos}
+        futures = {ex.submit(create_li, v, list_res, liste, static): v for v in videos}
         for fut in as_completed(futures):
             res = fut.result()
             if res:
                 results.append(res)
     results.sort(key=lambda item: int(item[2]), reverse=True)
+    #d.textviewer('debug',str(results))
     if results:
         for url, list_item, ts, res_item in results:
             #u.log_info(str(res_item))
@@ -546,13 +664,14 @@ def list_videos(videos, list, max_workers=20):
             except Exception as e:
                 u.log_error(f"addDirectoryItem error: {e}")
         if temp != list_res:
-            u.save_list(temp,list,'res')
+            u.save_list(temp,liste,'res')
         xbmcplugin.endOfDirectory(HANDLE)
     else:
         d.notification(list_name, "keine Ergebnisse", xbmcgui.NOTIFICATION_INFO, 2000)
 
 
 #STATIC
+
 def list_videos_static(videos):
     xbmcplugin.setContent(HANDLE, 'videos')
     for video in videos:
@@ -569,7 +688,9 @@ def list_videos_static(videos):
         list_item.setProperty('IsPlayable', 'true')
         #d.ok('list_videos video url',video['url_video'])
         video_url = quote(video['url_video'])
-        url = f"plugin://{ADDON_ID}/?action=play&file={video_url}"
+        video_url_alt = quote(video['url_video_alt'])
+        #url = f"plugin://{ADDON_ID}/?action=play&json={video.get('list','')}&stitle={stitle}"
+        url = f"plugin://{ADDON_ID}/?action=play2&file={video_url}&alt={video_url_alt}"
         #u.log_info(url)
         is_folder = False
         xbmcplugin.addDirectoryItem(HANDLE, url, list_item, is_folder)
@@ -585,10 +706,13 @@ def list_videos_static(videos):
 #List video Switch
 def list_videos_switch(list):
     videos, static = mvw_list(list)
+    '''
     if static:
         list_videos_static(videos)
     else:
         list_videos(videos,list)
+    '''
+    list_videos(videos,list,static)
     
 #NEW LIST
 def newlist(json=None):
@@ -642,6 +766,8 @@ def newlist(json=None):
                     if 'arte' in send['channel'].lower():
                         img_list = arte_img_search(send['title'])
                         send['channel'] = "ARTE.DE"
+                    elif send['topic'].lower() != send['title'].lower():
+                        img_list = ard_img_search(send['title'])
                     else:
                         img_list = ard_img_search(send['topic'])
                     send['fanart'] = image_select_dialog(img_list['fanart'],'Fanart')
@@ -716,6 +842,8 @@ def newlist(json=None):
                 if edit_sel > 2:
                     if items['items'][what-lng]['channel'] == "ARTE.DE":
                         img_list = arte_img_search(items['items'][what-lng]['title'])
+                    elif items['items'][what-lng]['topic'] != items['items'][what-lng]['title']:
+                        img_list = ard_img_search(items['items'][what-lng]['title'])
                     else:
                         img_list = ard_img_search(items['items'][what-lng]['topic'])
                     items['items'][what-lng][list_keys[edit_sel]] = image_select_dialog(img_list[list_keys[edit_sel]],list_keys[edit_sel])
@@ -734,26 +862,14 @@ def remove_list(list):
 #######################
 
 def router(paramstring):
-    #WINDOW.clearProperties()
-    '''
-    try:
-        check = bool(WINDOW.getProperty('mtl.listing') and WINDOW.getProperty('mtl.search'))
-    except Exception:
-        check = False
-    #d.ok('ARSCH',str(check))
-    if not check:
-        WINDOW.clearProperty('mtl.search')
-    '''
     params = parse_qs(paramstring[1:])
     action = params.get('action', [None])[0]
     file_path = params.get('file', [''])[0]    
+    file_path_alt = params.get('alt', [''])[0]    
     json = params.get('json', [None])[0]
+    stitle = params.get('stitle', [None])[0]
+    #d.ok('router',f"{json}|{stitle}")
     s = params.get('s', [None])[0]
-    '''
-    if s:
-        d.ok('searchstring_router',s)
-        WINDOW.setProperty("mtl.search", s)
-    '''
     if action == "newlist":
         newlist(json)
     elif action == "remove":
@@ -761,7 +877,9 @@ def router(paramstring):
     elif action == "removelist":
         remove_list(json)
     elif action == "play":
-        playvideo(file_path)
+        playvideo(json,stitle)
+    elif action == "play2":
+        playvideo(file_path,file_path_alt)
     elif action == "show":
         list_videos_switch(json)
     elif action == "playlist":
