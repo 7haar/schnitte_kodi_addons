@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# MTL
+# to do:
 import os
 import sys
 
@@ -540,7 +542,8 @@ def listing():
     for list in lists:
         li = xbmcgui.ListItem(label=list, offscreen=True)
         info_tag = li.getVideoInfoTag()
-        info_tag.setMediaType('video')
+        #info_tag.setMediaType('video')
+        info_tag.setMediaType('tvshow')
         info_tag.setTitle(list.capitalize())
         url = f"plugin://{ADDON_ID}/?action=show&json={list}"
         is_folder = True
