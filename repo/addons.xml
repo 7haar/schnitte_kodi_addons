@@ -27,7 +27,7 @@
 		</assets>
     </extension>
 </addon>
-<addon id="plugin.video.mtl" name="MTL" version="1.2.0" provider-name="oho">
+<addon id="plugin.video.mtl" name="MTL" version="1.2.1" provider-name="oho">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.requests" version="2.12.4"/>
@@ -39,8 +39,14 @@
         <reuselanguageinvoker>false</reuselanguageinvoker>
         <summary lang="de_de">MTL</summary>
         <summary lang="eng">MTL</summary>
-        <description>Erstelle Listen aus Sendungen der ARD und ZDF Mediathek und lasse dir die neusten Sendungen anzeigen.</description>
-        <disclaimer lang="de_de"></disclaimer>
+        <description>
+            Erstelle Listen aus Sendungen der ARD und ZDF Mediathek und lasse dir die neusten Sendungen anzeigen. 
+             - Inklusive Suchfunktion
+             - Resume Points
+             ----------------------------------
+             - v1.2.0: add resume points
+             - v1.2.1: Listing content tvshow
+        </description><disclaimer lang="de_de"></disclaimer>
         <platform>all</platform>
         <assets>
 			<icon>resources/images/icon.png</icon>
