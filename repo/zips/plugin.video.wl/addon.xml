@@ -1,6 +1,7 @@
-<addon id="plugin.video.wl" name="MyWatchlist" version="0.2.0" provider-name="OHO">
+<addon id="plugin.video.wl" name="MyWatchlist" version="1.0.0" provider-name="OHO">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="script.module.requests" version="2.9.1"/>
     </requires>
     <!-- Hauptplugin -->
     <extension point="xbmc.python.pluginsource" library="default.py">

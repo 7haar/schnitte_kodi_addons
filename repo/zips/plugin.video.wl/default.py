@@ -9,6 +9,7 @@ import sys
 import time
 import re
 from urllib.parse import parse_qs, unquote, quote, urlencode
+from lib.tmdb import tmdb_search, tmdb_img_search
 from lib.utils import save_watchlist, load_watchlist, npath, list_json_lists, clean_str, delete_file
 
 ADDON = xbmcaddon.Addon()
@@ -19,6 +20,8 @@ WINDOW = xbmcgui.Window(10000)
 IMG_PATH = xbmcvfs.translatePath(f"special://home/addons/{ADDON_ID}/resources/images/")
 
 auto_sort = ADDON.getSetting('sort') == "2"
+
+d = xbmcgui.Dialog()
 
 #DATA_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
 #WATCHLIST_FILE = os.path.join(DATA_PATH, 'watchlist.json')
@@ -67,7 +70,7 @@ def playlist(list):
     if playlist.size() == 0:
         #xbmc.log("Playlist ist leer", level=xbmc.LOGDEBUG)
         # optional: Hinweis für Nutzer
-        xbmcgui.Dialog().notification(f"{LANGID(30100)}", f"{LANGID(30201)}", xbmcgui.NOTIFICATION_INFO, 2000)
+        d.notification(f"{LANGID(30100)}", f"{LANGID(30201)}", xbmcgui.NOTIFICATION_INFO, 2000)
     else:
         player = xbmc.Player()
         player.play(playlist)
@@ -127,9 +130,9 @@ def add_to_watchlist():
     heading = f"MyWatchlist - {LANGID(30203)}"
     if but_bool:
         but = ADDON.getSetting('sc_list') # 2 0 1
-        pre = xbmcgui.Dialog().yesnocustom(heading, f"Add {item['title']}", f"{LANGID(30203)} {wlfile.upper()}", f"{LANGID(30204)}", f"{LANGID(30203)} {but.upper()}", defaultbutton=xbmcgui.DLG_YESNO_CUSTOM_BTN)
+        pre = d.yesnocustom(heading, f"Add {item['title']}", f"{LANGID(30203)} {wlfile.upper()}", f"{LANGID(30204)}", f"{LANGID(30203)} {but.upper()}", defaultbutton=xbmcgui.DLG_YESNO_CUSTOM_BTN)
     else:
-        pre = xbmcgui.Dialog().yesnocustom(heading, f"Add {item['title']}", f"{LANGID(30203)} {wlfile.upper()}", f"{LANGID(222)}", f"{LANGID(30204)}", defaultbutton=xbmcgui.DLG_YESNO_CUSTOM_BTN)
+        pre = d.yesnocustom(heading, f"Add {item['title']}", f"{LANGID(30203)} {wlfile.upper()}", f"{LANGID(222)}", f"{LANGID(30204)}", defaultbutton=xbmcgui.DLG_YESNO_CUSTOM_BTN)
     # DEBUG
     #xbmcgui.Dialog().ok("DEBUG",str(pre))
     if but_bool and pre == 1:
@@ -139,11 +142,11 @@ def add_to_watchlist():
         pre = 1
 
     if pre == 1:
-        sel = xbmcgui.Dialog().select(heading, menu)
+        sel = d.select(heading, menu)
         if sel == -1:
             return
         if sel == 0:
-            new_name = xbmcgui.Dialog().input(f"{LANGID(30205)}")
+            new_name = d.input(f"{LANGID(30205)}")
             if not new_name:
                 return
             new_name = clean_str(new_name.strip())
@@ -164,11 +167,11 @@ def add_to_watchlist():
     if not any(npath(x.get('path')) == npath(path) for x in watchlist):
         watchlist.append(item)
         if save_watchlist(watchlist,filename):
-            xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' {LANGID(30200)}", xbmcgui.NOTIFICATION_INFO, 2000)
+            d.notification(target_name.upper(), f"'{title}' {LANGID(30200)}", xbmcgui.NOTIFICATION_INFO, 2000)
         else:
-            xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' {LANGID(30206)}", xbmcgui.NOTIFICATION_INFO, 2000)
+            d.notification(target_name.upper(), f"'{title}' {LANGID(30206)}", xbmcgui.NOTIFICATION_INFO, 2000)
     else:
-        xbmcgui.Dialog().notification(target_name.upper(), f"'{title}' {LANGID(30207)}", xbmcgui.NOTIFICATION_INFO, 2000)
+        d.notification(target_name.upper(), f"'{title}' {LANGID(30207)}", xbmcgui.NOTIFICATION_INFO, 2000)
 
 def listing():
     lists = list_json_lists()
@@ -185,9 +188,10 @@ def listing():
         url = f"plugin://{ADDON_ID}/?action=show&json={list}"
         is_folder = True
         remove_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=removelist&json={list})"
-        playlist_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=playlist&json={list})"
+        #playlist_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=playlist&json={list})"
         #script_cmd = "RunScript(plugin.video.wl)"
-        li.addContextMenuItems([(f"[COLOR goldenrod]{LANGID(30208)}[/COLOR]", remove_cmd),(f"[COLOR goldenrod]{LANGID(30209)}[/COLOR]", playlist_cmd)])
+        #li.addContextMenuItems([(f"[COLOR goldenrod]{LANGID(30208)}[/COLOR]", remove_cmd),(f"[COLOR goldenrod]{LANGID(30209)}[/COLOR]", playlist_cmd)])
+        li.addContextMenuItems([(f"[COLOR goldenrod]{LANGID(30208)}[/COLOR]", remove_cmd)])
         xbmcplugin.addDirectoryItem(handle=HANDLE, url=url, listitem=li, isFolder=is_folder)
         
     xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
@@ -203,7 +207,7 @@ def show_watchlist(list):
     
     
     if not watchlist:
-        xbmcgui.Dialog().notification(str(list).upper(), f"{LANGID(30210)}", xbmcgui.NOTIFICATION_INFO, 2000)
+        d.notification(str(list).upper(), f"{LANGID(30210)}", xbmcgui.NOTIFICATION_INFO, 2000)
         xbmcplugin.endOfDirectory(HANDLE)
         return
     
@@ -226,7 +230,6 @@ def show_watchlist(list):
         else:
             li.setProperty('IsPlayable', 'false')
             mt = "tvshow"
-            #is_folder = True
             is_folder = False
         
         info.setMediaType(mt)
@@ -235,7 +238,10 @@ def show_watchlist(list):
         encoded_path = quote(item['path'], safe='')
         remove_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=remove&json={list}&file={encoded_path})"
         playlist_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=playlist&json={list})"
-        li.addContextMenuItems([(f"[COLOR goldenrod]{LANGID(30211)} {list}[/COLOR]", remove_cmd),(f"[COLOR goldenrod]{LANGID(30209)}[/COLOR]", playlist_cmd)])
+        img_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=editimg&json={list}&file={encoded_path})"
+        edit_cmd = f"RunPlugin(plugin://{ADDON_ID}/?action=edit&json={list}&file={encoded_path})"
+        #li.addContextMenuItems([(f"[COLOR goldenrod]{LANGID(30211)} {list}[/COLOR]", remove_cmd),(f"[COLOR goldenrod]Bild ändern[/COLOR]", img_cmd),(f"[COLOR goldenrod]EDIT[/COLOR]", edit_cmd)]) # xxx trans
+        li.addContextMenuItems([(f"[COLOR goldenrod]{LANGID(30211)} {list}[/COLOR]", remove_cmd),(f"[COLOR goldenrod]EDIT[/COLOR]", edit_cmd)]) # xxx trans
         
         url = f"plugin://{ADDON_ID}/?action=play_switch&json={list}&file={encoded_path}"
         
@@ -259,14 +265,13 @@ def remove_list(list):
     perm = ADDON.getSetting('perm') == 'true'
     dl = delete_file(f"{list}.json",perm)
     if dl:
-        xbmcgui.Dialog().notification(f"{str(list).upper()}", f"{LANGID(30212)}", xbmcgui.NOTIFICATION_INFO, 2000)
+        d.notification(f"{str(list).upper()}", f"{LANGID(30212)}", xbmcgui.NOTIFICATION_INFO, 2000)
     else:
-        xbmcgui.Dialog().notification(f"{str(list).upper()}", f"{LANGID(30213)}", xbmcgui.NOTIFICATION_INFO, 2000)
+        d.notification(f"{str(list).upper()}", f"{LANGID(30213)}", xbmcgui.NOTIFICATION_INFO, 2000)
     xbmc.executebuiltin("Container.Refresh")
     
 def remove_from_watchlist(file_path, list):
     #xbmcgui.Dialog().ok('Pfad',file_path)
-    update(list)
     watchlist = load_watchlist(list)
     new_list = []
     for item in watchlist:
@@ -274,9 +279,117 @@ def remove_from_watchlist(file_path, list):
         if item['path'] != file_path:
             new_list.append(item)
     save_watchlist(new_list, list)
-    xbmcgui.Dialog().notification(f"{str(list).upper()}", f"{LANGID(30214)}", xbmcgui.NOTIFICATION_INFO, 2000)
+    update(list)
+    d.notification(f"{str(list).upper()}", f"{LANGID(30214)}", xbmcgui.NOTIFICATION_INFO, 2000)
     xbmc.executebuiltin("Container.Refresh")
 
+######### IMG EDIT #################################
+def image_select_dialog(img_list,label="Bild",header='',labellist=None,ret='pos'): # xxx trans
+    items = []
+    #u.log_info(str(img_list))
+    for i, path in enumerate(img_list):
+        li = xbmcgui.ListItem(label=f"{label if not labellist else labellist[i]}")
+        li.setArt({'thumb': path, 'icon': path, 'poster': path})
+        items.append(li)
+    sel = d.select(f"{header}", items, useDetails=True)
+    if sel == -1:
+        return None
+    if ret == 'pos':
+        return sel
+    else:
+        return img_list[sel]
+
+
+def tmdb_img(search,type):
+    data = tmdb_search(search)
+    base_img_url = "https://image.tmdb.org/t/p/original"
+    if data:
+        map = {'title': 'movie', 'name': 'tv'}
+        ls = []
+        label_list = []
+        img_list = []
+        for r in data:
+            id = r.get('id','0')
+            backdrop = r.get('backdrop_path','0')
+            key = next((k for k in map if k in r), None)
+            value = r.get(key, 'NICHTS') if key else 'NICHTS'
+            label = map.get(key, 'kein_key')
+            label_list.append(value)
+            img_list.append(str(base_img_url) + str(backdrop))
+            ls.append({'id':id,'type':label,'title':f"{value} ({label.upper()}"})
+        sel = image_select_dialog(img_list=img_list, labellist=label_list)
+        #d.ok('sel',str(sel))
+        if sel is not None and sel > -1:
+            imgs = tmdb_img_search(ls[sel])
+            if type != 'poster':
+                type = 'fanart'
+            img = image_select_dialog(img_list=imgs[type],ret='img')
+            #d.ok('img',img)
+            if img:
+                return img
+        
+
+def new_editimg(type,title):
+    sel = d.select(f"Suche {type} für {title}..",['online','local']) # xxx trans
+    if sel == 0:
+        input = d.input('Suche',title) # xxx trans
+        if input == '':
+            return
+        img = tmdb_img(input,type)
+    if sel == 1:
+        img = d.browse(2, f"Wähle Bild für {type} von {title}", "files") # xxx trans  
+    if sel == -1:
+        return None
+    return img
+
+################### EDIT #############################
+
+def edit(file_path,list):
+    watchlist = load_watchlist(list)
+    pos = -1
+    menu = []
+    keys = []
+    values = []
+    input_vals = ['title','plot','path']
+    img_vals = ['thumb','landscape','fanart','poster']
+    fof = {'file':'folder','folder':'file'}
+    for i, x in enumerate(watchlist):
+        if x.get('path') == file_path:
+            pos = i
+            break
+    for k, v in watchlist[pos].items():
+        if k !='last_used':
+            menu.append(f"{k} : {v}")
+            keys.append(k)
+            values.append(v)
+    menu_len = len(menu)
+    menu.append(f"..SPEICHERN..") # xxx trans
+    while True:
+        new = ''
+        sel = d.select(f"{watchlist[pos]['title']}",menu)
+        if sel == -1:
+            break
+        elif sel == menu_len:
+            if save_watchlist(watchlist,list):
+                d.notification(list.upper(), f"'{watchlist[pos]['title']}' geändert", xbmcgui.NOTIFICATION_INFO, 2000) # xxx trans
+                update(list)
+                xbmc.executebuiltin("Container.Refresh")
+            else:
+                d.notification(list.upper(), f"'{watchlist[pos]['title']}' {LANGID(30206)}", xbmcgui.NOTIFICATION_INFO, 2000)
+            break
+        elif keys[sel] in input_vals:
+            new = d.input(keys[sel],values[sel])
+        elif keys[sel] in img_vals:
+            new = new_editimg(keys[sel],watchlist[pos]['title']) # hier weiter
+            #d.ok('img',str(new))
+        elif keys[sel] == 'fileorfolder':
+            new = fof[values[sel]]
+            values[sel] = new
+        if new is not None and new != '' and new != watchlist[pos][keys[sel]]:
+            watchlist[pos][keys[sel]] = new
+            menu[sel] = f"{keys[sel]} : {new}"
+            
+################### PLAY #############################
 def play_switch(file_path,list):
     #xbmcgui.Dialog().ok('debug',file_path)
     #xbmc.log(f"<<< WL >>>:play_switch file_path: {file_path}", level=xbmc.LOGINFO)
@@ -306,6 +419,7 @@ def play_switch(file_path,list):
         elif any(file_path.startswith(sw) for sw in aw):
             epath = quote(file_path, safe=':/?&=%')
             full = f'ActivateWindow(10025,"{epath}",return)'
+            #full = f'ActivateWindow(Videos,"{epath}",return)'
             
         # DEBUG
         #xbmcgui.Dialog().ok('debug',full)
@@ -380,6 +494,10 @@ def router(paramstring):
         show_watchlist(json)
     elif action == "playlist":
         playlist(json)
+    elif action == "editimg":
+        editimg(file_path,json)
+    elif action == "edit":
+        edit(file_path,json)
     else:
         listing()
 
