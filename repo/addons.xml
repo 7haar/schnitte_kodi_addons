@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<addons><addon id="plugin.video.wl" name="MyWatchlist" version="1.0.0" provider-name="OHO">
+<addons><addon id="plugin.video.wl" name="MyWatchlist" version="1.0.1" provider-name="OHO">
     <requires>
-        <import addon="xbmc.python" version="3.0.0" />
+        <import addon="xbmc.python" version="3.0.1" />
     </requires>
     <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video executable</provides>
@@ -27,9 +27,9 @@
 		</assets>
     </extension>
 </addon>
-<addon id="plugin.video.mtl" name="MTL" version="1.2.1" provider-name="oho">
+<addon id="plugin.video.mtl" name="MTL" version="1.2.2" provider-name="oho">
     <requires>
-        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="xbmc.python" version="3.0.1"/>
         <import addon="script.module.requests" version="2.12.4"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="default.py">
