@@ -27,7 +27,7 @@
 		</assets>
     </extension>
 </addon>
-<addon id="plugin.video.mtl" name="MTL" version="1.2.2" provider-name="oho">
+<addon id="plugin.video.mtl" name="MTL" version="1.2.5" provider-name="oho">
     <requires>
         <import addon="xbmc.python" version="3.0.1"/>
         <import addon="script.module.requests" version="2.12.4"/>
@@ -44,8 +44,14 @@
              - Inklusive Suchfunktion
              - Resume Points
              ----------------------------------
-             - v1.2.0: add resume points
-             - v1.2.1: Listing content tvshow
+             - v1.2.0:  add resume points
+             - v1.2.1:  Listing content tvshow
+             - v1.2.2:  Python 3.0.1
+             - v1.2.5:  -Edit verbessert
+                        -beim Ändern des Titels korrekte Übernahme des Senders
+                        -Wiedergabe von MTL Sucheinträgen aus Favouriten / MyWatchlist, 
+                         die nicht in Results vorhanden sind werden in die Suche umgeleitet.
+                        -Code Cleanup 
         </description><disclaimer lang="de_de"></disclaimer>
         <platform>all</platform>
         <assets>
@@ -54,4 +60,28 @@
 		</assets>
     </extension>
 </addon>
+<addon id="plugin.video.cozybinge" name="CozyBinge" version="1.0.2" provider-name="oho">
+        <requires>
+            <import addon="xbmc.python" version="3.0.1" />
+        </requires>
+        <extension point="xbmc.python.pluginsource" library="default.py">
+            <provides>video</provides>
+        </extension>
+        <extension point="xbmc.addon.metadata">
+            <summary lang="en">Create configurable lists of unseen TV episodes</summary>
+            <description lang="en">
+                Allows creating multiple user-defined lists of TV shows.
+                Each list stores rules like maximum episodes per show and
+                consecutive episode grouping. The addon displays unseen
+                episodes based on those rules and plays them with full metadata.
+            </description>
+            <platform>all</platform>
+            <license>MIT</license>
+            <source></source>
+            <assets>
+                <icon>resources/icon.png</icon>
+                <fanart>resources/fanart.jpg</fanart>
+            </assets>
+        </extension>
+    </addon>
 </addons>
