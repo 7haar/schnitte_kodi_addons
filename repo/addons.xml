@@ -27,7 +27,7 @@
 		</assets>
     </extension>
 </addon>
-<addon id="plugin.video.mtl" name="MTL" version="1.2.5" provider-name="oho">
+<addon id="plugin.video.mtl" name="MTL" version="1.2.6" provider-name="oho">
     <requires>
         <import addon="xbmc.python" version="3.0.1"/>
         <import addon="script.module.requests" version="2.12.4"/>
@@ -51,7 +51,8 @@
                         -beim Ändern des Titels korrekte Übernahme des Senders
                         -Wiedergabe von MTL Sucheinträgen aus Favouriten / MyWatchlist, 
                          die nicht in Results vorhanden sind werden in die Suche umgeleitet.
-                        -Code Cleanup 
+                        -Code Cleanup
+             - v1.2.6: change ard img url
         </description><disclaimer lang="de_de"></disclaimer>
         <platform>all</platform>
         <assets>
