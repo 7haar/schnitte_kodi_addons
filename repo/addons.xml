@@ -27,7 +27,7 @@
 		</assets>
     </extension>
 </addon>
-<addon id="plugin.video.mtl" name="MTL" version="1.2.9" provider-name="oho">
+<addon id="plugin.video.mtl" name="MTL" version="1.3.0" provider-name="oho">
     <requires>
         <import addon="xbmc.python" version="3.0.1"/>
         <import addon="script.module.requests" version="2.12.4"/>
@@ -58,6 +58,7 @@
                        Listen mit xxmtl werden ausgeblendet
              - v1.2.8: feste Cachedauer für Listen eingeführt
 			 - v1.2.9: TMDB Filmempfehlung hinzugefühgt
+			 - v1.3.0: Bugfixing
         </description><disclaimer lang="de_de"></disclaimer>
         <platform>all</platform>
         <assets>
